@@ -6,7 +6,12 @@ export {
 	## Run a BrainFuck program.
 	##
 	## code: The code to execute.
-	global BrainFuck::run: function(code: string);
+	## name: An optional argument to give a name to a program in case
+	##       multiple programs are executing concurrently.
+	global BrainFuck::run: function(code: string, name: string &default="");
+
+	## A signal to indicate that a BrainFuck program has completed.
+	global BrainFuck::run_complete: event(name: string);
 
 	## The delay between script parsing loops.
 	## Even with this value set to 0 seconds it will
@@ -25,6 +30,7 @@ type Memory: table[count] of count &default=0;
 type CallStack: table[count] of count;
 
 type Program: record {
+	name:            string;
 	cycle:           count &default=0;
 	instruction_ptr: count &default=0;
 	call_stack:      CallStack &default=CallStack();
@@ -168,8 +174,13 @@ event exec(prg: Program, instructions: Instructions)
 		}
 
 	if ( prg$instruction_ptr != |instructions| )
+		{
 		schedule exec_delay { exec(prg, instructions) };
-	#event exec(prg, instructions);
+		}
+	else
+		{
+		event BrainFuck::run_complete(prg$name);
+		}
 	}
 
 function convert_to_instructions(code: string): Instructions
@@ -180,10 +191,10 @@ function convert_to_instructions(code: string): Instructions
 	return instructions;
 }
 
-function run(code: string)
+function run(code: string, name: string)
 	{
-	local prg: Program;
-	prg$code = gsub(code, /[^\.\<\>\[\]\+\-,]/, "");
+	local prg = Program($name=name, 
+	                    $code=gsub(code, /[^\.\<\>\[\]\+\-,]/, ""));
 	local instructions = convert_to_instructions(prg$code);
 	event exec(prg, instructions);
 	}

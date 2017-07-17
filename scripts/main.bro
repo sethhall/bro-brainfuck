@@ -23,7 +23,7 @@ export {
 	## Control the number of instructions that will 
 	## run before yielding control to Bro's main event 
 	## loop.
-	const max_instructions_at_once = 5000 &redef;
+	const max_instructions_at_once = 10000 &redef;
 }
 
 type Memory: table[count] of count &default=0;

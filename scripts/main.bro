@@ -24,9 +24,12 @@ export {
 	## run before yielding control to Bro's main event 
 	## loop.
 	const max_instructions_at_once = 10000 &redef;
+
+	## The byte size of available heap memory.
+	const heap_size = 30000 &redef;
 }
 
-type Memory: table[count] of count &default=0;
+type Memory: vector of count;
 type CallStack: table[count] of count;
 
 type Program: record {
@@ -35,7 +38,7 @@ type Program: record {
 	instruction_ptr: count &default=0;
 	call_stack:      CallStack &default=CallStack();
 
-	mem:             Memory &default=Memory();
+	mem:             Memory;
 	ptr:             count &default=0;
 
 	skip_to_end_of_loop: bool &default=F;
@@ -136,7 +139,7 @@ const instruction_lookup: table[string] of function(bf: Program) = {
 			Reporter::warning("Brainfuck input reading not yet supported.");
 			input_warned=T;
 			}},
-	["."] = function(bf: Program) { init_buf(bf); print stdout, charlookup[bf$mem[bf$ptr]]; },
+	["."] = function(bf: Program) { init_buf(bf); print stdout, charlookup[bf$mem[bf$ptr]]; flush_all(); },
 	["["] = function(bf: Program) { begin_loop(bf); },
 	["]"] = function(bf: Program) { end_loop(bf); }
 };
@@ -193,7 +196,10 @@ function convert_to_instructions(code: string): Instructions
 
 function run(code: string, name: string)
 	{
+	local memory: Memory;
+	resize(memory, heap_size);
 	local prg = Program($name=name, 
+	                    $mem=memory,
 	                    $code=gsub(code, /[^\.\<\>\[\]\+\-,]/, ""));
 	local instructions = convert_to_instructions(prg$code);
 	event exec(prg, instructions);

@@ -1,5 +1,4 @@
-##! This implements the mandelbrot fractal set.  Only full lines output
-##! so it may take a while before any output is seen.
+##! This implements the mandelbrot fractal set.
 
 @load ..
 
